@@ -1,0 +1,1314 @@
+<!DOCTYPE html>
+<!--
+  ============================================================
+  PORTFOLIO MOCKUP — Alexander Prue
+  ============================================================
+  This is a single-page HTML portfolio site. Everything lives
+  in one file: structure (HTML), styles (CSS inside <style>),
+  and behavior (JavaScript inside <script>).
+
+  PAGE SECTIONS (in order):
+    1. <nav>          — Fixed top navigation bar
+    2. .ticker        — Scrolling red marquee strip
+    3. .hero          — Two-column intro with name + featured piece
+    4. #work          — Filterable 2×2 grid of work samples
+    5. .info-band     — Side-by-side About and Résumé columns
+    6. .contact-band  — Horizontal contact CTA strip
+    7. <footer>       — Name, social links, copyright
+
+  TO CUSTOMIZE:
+    - Replace "Alexander Prue" with your name everywhere it appears
+    - Update .hero-desc with your own tagline
+    - Swap out the work cards with your real pieces (title, excerpt, link)
+    - Edit the About paragraphs and Résumé items with your info
+    - Change the contact email in the <a href="mailto:..."> link
+  ============================================================
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <!-- Makes the site scale correctly on phones and tablets -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alexander Prue — Writer & Maker</title>
+
+  <!--
+    FONTS — loaded from Google Fonts
+    - Playfair Display: serif font used for big headlines and card titles.
+      Has italic and extra-bold weights for editorial drama.
+    - DM Sans: clean sans-serif for body text, nav links, and labels.
+    - Bebas Neue: condensed all-caps font for the logo, section titles,
+      and stat numbers. Gives it a newspaper/broadcast feel.
+  -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=DM+Sans:wght@300;400;500&family=Bebas+Neue&display=swap" rel="stylesheet">
+
+  <style>
+    /* ============================================================
+       CSS CUSTOM PROPERTIES (variables)
+       ============================================================
+       Defined on :root so they're available everywhere in the CSS.
+       Change a color here once and it updates across the whole page.
+
+       --black : near-black page background
+       --white : warm off-white (not pure #fff — easier on the eyes)
+       --red   : the single accent color; used sparingly for labels,
+                 the ticker bar, active states, and hover accents
+       --gray  : mid-tone for secondary text and metadata
+       --rule  : very dark gray used for all the dividing border lines
+    ============================================================ */
+    :root {
+      --black: #0a0a0a;
+      --white: #f4f0e8;
+      --red:   #c8281e;
+      --gray:  #888;
+      --rule:  #2a2a2a;
+    }
+
+    /* ============================================================
+       RESET & BASE STYLES
+       ============================================================
+       box-sizing: border-box means padding and borders are included
+       in an element's stated width/height (much easier to reason about).
+       margin/padding reset removes browser defaults.
+    ============================================================ */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* Enables smooth scrolling when clicking anchor links (e.g. #work) */
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--black);
+      color: var(--white);
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 300;        /* Light weight as the default body text */
+      overflow-x: hidden;      /* Prevents horizontal scrollbar from the ticker animation */
+    }
+
+
+    /* ============================================================
+       NAVIGATION BAR
+       ============================================================
+       Fixed to the top of the viewport so it stays visible as
+       you scroll. z-index: 100 keeps it above all page content.
+       backdrop-filter: blur() creates a frosted-glass effect so
+       page content scrolling underneath stays readable.
+    ============================================================ */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      justify-content: space-between; /* Logo on left, links on right */
+      align-items: center;
+      padding: 1.1rem 3rem;
+      background: rgba(10,10,10,0.93); /* Slightly transparent black */
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--rule);
+    }
+
+    /* Your name / logo in the top-left of the nav */
+    .nav-logo {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.3rem;
+      letter-spacing: 0.15em;
+      color: var(--white);
+      text-decoration: none;
+    }
+
+    /* The row of navigation links on the right side */
+    .nav-links {
+      display: flex;
+      gap: 2.5rem;
+      list-style: none; /* Removes bullet points from the <ul> */
+    }
+
+    /* Individual nav link styling — all caps, wide letter-spacing */
+    .nav-links a {
+      font-size: 0.7rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--gray);
+      text-decoration: none;
+      transition: color 0.2s; /* Smooth color change on hover */
+    }
+
+    /* On hover: brighten to full white */
+    .nav-links a:hover { color: var(--white); }
+
+    /* The .active class is added by JavaScript as you scroll
+       to highlight which section you're currently viewing */
+    .nav-links a.active { color: var(--red); }
+
+
+    /* ============================================================
+       TICKER (scrolling marquee strip)
+       ============================================================
+       The red bar below the nav with scrolling keywords.
+       overflow: hidden clips the text so it disappears at the edges.
+       The animation is on .ticker-inner and moves the text leftward.
+       The content is duplicated in the HTML so the loop is seamless —
+       the animation only moves 50% of the total width, which lines up
+       exactly with where the duplicate copy starts.
+    ============================================================ */
+    .ticker {
+      margin-top: 56px;        /* Pushes ticker below the fixed nav (nav height ~56px) */
+      background: var(--red);
+      overflow: hidden;
+      white-space: nowrap;     /* Prevents text from wrapping to a new line */
+      padding: 0.5rem 0;
+      font-size: 0.62rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      font-weight: 500;
+    }
+
+    /* The inner span holds the actual text and animates */
+    .ticker-inner {
+      display: inline-block;   /* Required for transform animations to work */
+      animation: ticker 25s linear infinite; /* Slow, continuous loop */
+    }
+
+    /* Moves the text from its starting position to -50% of its own width.
+       Because the text is duplicated, -50% lands exactly at the start
+       of the second copy, making the loop invisible. */
+    @keyframes ticker {
+      from { transform: translateX(0); }
+      to   { transform: translateX(-50%); }
+    }
+
+
+    /* ============================================================
+       HERO SECTION
+       ============================================================
+       A two-column layout: your name/bio on the left, your latest
+       featured piece + stats on the right.
+       No min-height: 100vh here — it sizes to its content, keeping
+       the page compact.
+    ============================================================ */
+    .hero {
+      display: grid;
+      grid-template-columns: 1fr 1fr; /* Equal-width columns */
+      border-bottom: 1px solid var(--rule);
+      /* fadeUp animation runs once on page load */
+      animation: fadeUp 0.8s ease both;
+    }
+
+    /* Fades the hero in and slides it up slightly on page load */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* LEFT COLUMN: name, tagline, and CTA button */
+    .hero-left {
+      padding: 4rem 3rem;
+      border-right: 1px solid var(--rule);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    /* Small red label above the name — e.g. "Portfolio · 2025" */
+    .hero-issue {
+      font-size: 0.65rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--red);
+      margin-bottom: 1.5rem;
+      font-weight: 500;
+    }
+
+    /* Your name — big, bold Playfair Display serif.
+       clamp(min, preferred, max) means it scales with viewport width
+       but never goes below 3.5rem or above 6rem. */
+    .hero-name {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(3.5rem, 6vw, 6rem);
+      font-weight: 900;
+      line-height: 0.92;       /* Tight line height for stacked display text */
+      margin-bottom: 2rem;
+      letter-spacing: -0.02em; /* Slight negative tracking for large display text */
+    }
+
+    /* The <em> (italic) wraps your last name to add visual contrast.
+       opacity: 0.45 makes it appear as a faded second line. */
+    .hero-name em {
+      font-style: italic;
+      opacity: 0.45;
+      display: block; /* Forces it onto its own line */
+    }
+
+    /* Short red horizontal rule between name and tagline — decorative */
+    .hero-rule {
+      width: 3rem;
+      height: 2px;
+      background: var(--red);
+      margin-bottom: 1.2rem;
+    }
+
+    /* One-sentence bio / tagline below the name */
+    .hero-desc {
+      font-size: 0.95rem;
+      line-height: 1.65;
+      color: #bbb;
+      max-width: 340px;
+      margin-bottom: 2rem;
+    }
+
+    /* "View My Work" button — outlined white box style.
+       On hover it fills with white and text flips to black. */
+    .hero-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.7rem;
+      font-size: 0.7rem;
+      font-weight: 500;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--white);
+      text-decoration: none;
+      border: 1px solid var(--white);
+      padding: 0.8rem 1.6rem;
+      transition: background 0.2s, color 0.2s;
+      width: fit-content; /* Button only as wide as its text */
+    }
+
+    .hero-cta:hover { background: var(--white); color: var(--black); }
+
+    /* The arrow inside the CTA slides right on hover */
+    .hero-cta .arrow { transition: transform 0.2s; }
+    .hero-cta:hover .arrow { transform: translateX(4px); }
+
+    /* RIGHT COLUMN: featured piece callout + stats row.
+       The diagonal stripe pattern is a subtle texture created with
+       repeating-linear-gradient — it adds depth without a real image. */
+    .hero-right {
+      padding: 4rem 3rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 2rem;
+      background:
+        repeating-linear-gradient(
+          45deg,
+          rgba(255,255,255,0.012) 0px,   /* Nearly invisible white stripe */
+          rgba(255,255,255,0.012) 1px,
+          transparent 1px,
+          transparent 14px               /* Gap between stripes */
+        );
+      position: relative; /* Needed so the ::before pseudo-element positions correctly */
+    }
+
+    /* A soft red radial glow layered on top of the stripe background.
+       pointer-events: none means it doesn't interfere with mouse clicks. */
+    .hero-right::before {
+      content: '';
+      position: absolute;
+      inset: 0; /* Shorthand for top/right/bottom/left: 0 */
+      background: radial-gradient(ellipse at 60% 40%, rgba(200,40,30,0.1) 0%, transparent 65%);
+      pointer-events: none;
+    }
+
+    /* Small red "Latest Feature" label above the featured headline */
+    .featured-label {
+      font-size: 0.62rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--red);
+      margin-bottom: 0.6rem;
+      font-weight: 500;
+    }
+
+    /* The title of your most recent / best piece */
+    .featured-headline {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.45rem;
+      font-weight: 700;
+      line-height: 1.25;
+      margin-bottom: 0.6rem;
+    }
+
+    /* Publication name and date below the featured headline */
+    .featured-meta {
+      font-size: 0.7rem;
+      color: var(--gray);
+      letter-spacing: 0.08em;
+    }
+
+    /* Row of three quick stats (articles, videos, publications) */
+    .hero-stats {
+      display: flex;
+      gap: 2rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--rule); /* Thin divider above the stats */
+    }
+
+    /* Each individual stat (number + label stacked vertically) */
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    /* The large number in each stat — uses Bebas Neue for impact */
+    .stat-num {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2.2rem;
+      line-height: 1;
+    }
+
+    /* The label below each number (e.g. "Articles") */
+    .stat-label {
+      font-size: 0.62rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--gray);
+    }
+
+
+    /* ============================================================
+       FILTER BAR (above the work grid)
+       ============================================================
+       Three buttons: "All Work", "Writing", "Video".
+       Clicking one filters the cards below via JavaScript.
+       The active button gets a red underline.
+    ============================================================ */
+    .filter-bar {
+      display: flex;
+      border-bottom: 1px solid var(--rule);
+      padding: 0 3rem;
+    }
+
+    /* Each filter button — styled to look like tab labels */
+    .filter-btn {
+      font-size: 0.67rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      font-weight: 500;
+      color: var(--gray);
+      background: none;
+      border: none;
+      /* The bottom border acts as an underline indicator.
+         It's transparent by default and red when active. */
+      border-bottom: 2px solid transparent;
+      padding: 0.9rem 0;
+      margin-right: 2rem;
+      cursor: pointer;
+      transition: color 0.2s, border-color 0.2s;
+      font-family: 'DM Sans', sans-serif; /* Override browser button default font */
+    }
+
+    /* Active state: white text + red underline */
+    .filter-btn.active {
+      color: var(--white);
+      border-bottom-color: var(--red);
+    }
+
+    .filter-btn:hover { color: var(--white); }
+
+
+    /* ============================================================
+       WORK GRID
+       ============================================================
+       A 2-column grid of work sample cards.
+       Each card links to an external piece (article or video).
+       Cards get a data-type attribute ("writing" or "video") that
+       JavaScript uses to show/hide them when a filter is clicked.
+    ============================================================ */
+    .work-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr); /* Two equal columns */
+    }
+
+    /* Individual work card — acts as a clickable link (<a> tag) */
+    .work-card {
+      border-right: 1px solid var(--rule);
+      border-bottom: 1px solid var(--rule);
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+      transition: background 0.22s; /* Subtle hover glow */
+      cursor: pointer;
+      text-decoration: none;
+      color: inherit; /* Inherits text color so it doesn't turn blue like a default link */
+    }
+
+    /* Remove right border from every 2nd card (the right column)
+       so there's no double-border at the grid edge */
+    .work-card:nth-child(2n) { border-right: none; }
+
+    /* Slight white tint on hover to indicate interactivity */
+    .work-card:hover { background: rgba(255,255,255,0.03); }
+
+    /* Small label at the top of each card — e.g. "Feature · Writing"
+       Red for writing pieces, blue for video */
+    .card-type {
+      font-size: 0.6rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--red);
+      font-weight: 500;
+    }
+
+    /* Video cards use a blue label instead of red */
+    .card-type.video { color: #5b9bd5; }
+
+    /* Thumbnail placeholder — a colored rectangle (16:9 ratio).
+       In production you'd replace this with a real <img> tag. */
+    .card-thumb {
+      width: 100%;
+      aspect-ratio: 16/9;  /* Maintains widescreen proportions */
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Centers content inside the thumbnail (play icon or pub name) */
+    .card-thumb-inner {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Faint text showing the publication name, visible on writing cards */
+    .thumb-text {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 0.8rem;
+      letter-spacing: 0.15em;
+      color: rgba(255,255,255,0.18); /* Very faint — just a watermark effect */
+    }
+
+    /* Circular play button shown on video cards.
+       The triangle arrow is drawn using CSS borders (a common trick). */
+    .play-icon {
+      width: 40px;
+      height: 40px;
+      border: 2px solid rgba(255,255,255,0.35);
+      border-radius: 50%; /* Makes it a circle */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* The triangle "play" shape — made using the CSS border trick:
+       a zero-width/height element with colored borders creates a triangle */
+    .play-icon::after {
+      content: '';
+      border-style: solid;
+      border-width: 6px 0 6px 12px;  /* top right bottom left */
+      border-color: transparent transparent transparent rgba(255,255,255,0.65);
+      margin-left: 3px; /* Nudge right to visually center inside the circle */
+    }
+
+    /* Serif headline for each card — the article or video title */
+    .card-headline {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.05rem;
+      font-weight: 700;
+      line-height: 1.35;
+    }
+
+    /* Short teaser text describing the piece */
+    .card-excerpt {
+      font-size: 0.83rem;
+      line-height: 1.6;
+      color: #999;
+      flex: 1; /* Pushes the card-meta to the bottom regardless of excerpt length */
+    }
+
+    /* Bottom row of each card: publication name on the left, date on right */
+    .card-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 0.85rem;
+      border-top: 1px solid var(--rule);
+      margin-top: auto; /* Sticks to the bottom of the card */
+    }
+
+    .card-pub {
+      font-size: 0.65rem;
+      letter-spacing: 0.1em;
+      font-weight: 500;
+      text-transform: uppercase;
+      color: var(--gray);
+    }
+
+    .card-date { font-size: 0.65rem; color: #555; }
+
+    /* Thumbnail background colors — one per card.
+       Each is a subtle gradient to add depth to the placeholder. */
+    .thumb-1 { background: linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%); } /* Deep blue */
+    .thumb-2 { background: linear-gradient(135deg, #2d1515 0%, #4a1515 100%); } /* Dark red */
+    .thumb-3 { background: linear-gradient(135deg, #0d2818 0%, #1a4a2e 100%); } /* Forest green */
+    .thumb-4 { background: linear-gradient(135deg, #1a0a2e 0%, #2d1860 100%); } /* Deep purple */
+
+    /* Cards with the .hidden class are hidden by the filter JavaScript.
+       display:none removes them from the layout entirely (not just invisible). */
+    .work-card[data-type="video"].hidden,
+    .work-card[data-type="writing"].hidden { display: none; }
+
+
+    /* ============================================================
+       INFO BAND (About + Résumé side by side)
+       ============================================================
+       Two equal columns in one horizontal band:
+       - Left:  About section with bio text
+       - Right: Résumé with job history and education
+    ============================================================ */
+    .info-band {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      border-top: 1px solid var(--rule);
+    }
+
+    /* LEFT COLUMN — About */
+    .about-block {
+      padding: 3.5rem 3rem;
+      border-right: 1px solid var(--rule);
+    }
+
+    /* Small red section label — used in both About and Résumé blocks */
+    .block-label {
+      font-size: 0.62rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--red);
+      margin-bottom: 1.2rem;
+      font-weight: 500;
+    }
+
+    /* Larger serif headline in the About section */
+    .about-headline {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.6rem;
+      font-weight: 900;
+      line-height: 1.15;
+      margin-bottom: 1.2rem;
+    }
+
+    /* Bio paragraphs — muted gray with comfortable line height */
+    .about-body {
+      font-size: 0.9rem;
+      line-height: 1.75;
+      color: #aaa;
+      margin-bottom: 1rem;
+    }
+
+    /* <strong> tags inside the bio get bumped up to near-white
+       and use normal weight (not bold) for a subtle emphasis */
+    .about-body strong {
+      color: var(--white);
+      font-weight: 400;
+    }
+
+    /* Inline text link with an arrow — e.g. "Get in Touch →"
+       The arrow is added via CSS ::after so you don't have to
+       type it in every link in the HTML. */
+    .text-link {
+      font-size: 0.68rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--gray);
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      margin-top: 0.5rem;
+    }
+
+    .text-link:hover { color: var(--white); }
+    .text-link::after { content: '→'; } /* Arrow appended automatically */
+
+    /* RIGHT COLUMN — Résumé */
+    .resume-block { padding: 3.5rem 3rem; }
+
+    /* Vertical stack of job entries */
+    .resume-items {
+      display: flex;
+      flex-direction: column;
+      gap: 1.8rem;
+      margin-top: 1.2rem;
+    }
+
+    /* Top row of each job: role title on left, years on right */
+    .resume-item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 0.2rem;
+    }
+
+    /* Job title in serif font */
+    .resume-role {
+      font-family: 'Playfair Display', serif;
+      font-size: 1rem;
+      font-weight: 700;
+    }
+
+    /* Date range (e.g. "2022 – Present") in muted gray */
+    .resume-years { font-size: 0.68rem; color: var(--gray); }
+
+    /* Employer name below the role title */
+    .resume-org {
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--gray);
+      margin-bottom: 0.3rem;
+      font-weight: 500;
+    }
+
+    /* One-line description of the role */
+    .resume-desc { font-size: 0.85rem; line-height: 1.6; color: #777; }
+
+    /* Thin horizontal line between Experience and Education */
+    .resume-divider {
+      width: 100%;
+      height: 1px;
+      background: var(--rule);
+      margin: 1.8rem 0;
+    }
+
+    /* Education entries in a compact two-line text block */
+    .resume-edu { font-size: 0.8rem; color: #666; line-height: 1.7; }
+
+    /* "Download PDF" button — white fill, flips to red on hover */
+    .resume-download {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-size: 0.68rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--black);
+      text-decoration: none;
+      background: var(--white);
+      padding: 0.75rem 1.5rem;
+      margin-top: 1.5rem;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .resume-download:hover { background: var(--red); color: var(--white); }
+
+
+    /* ============================================================
+       CONTACT BAND
+       ============================================================
+       A single horizontal strip at the bottom of the main content.
+       Headline on the left, availability note + email CTA on the right.
+       No form — just a direct email link to keep it minimal.
+    ============================================================ */
+    .contact-band {
+      border-top: 1px solid var(--rule);
+      padding: 3.5rem 3rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 4rem;
+    }
+
+    /* Large serif headline — "Let's work together."
+       The <em> fades part of it for visual rhythm. */
+    .contact-headline {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2rem, 3.5vw, 3.2rem);
+      font-weight: 900;
+      line-height: 1.05;
+    }
+
+    .contact-headline em {
+      font-style: italic;
+      opacity: 0.4; /* Fades "work" to create contrast with the other words */
+    }
+
+    /* Right side of the contact strip: body text above the email button */
+    .contact-right {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      align-items: flex-start;
+    }
+
+    /* Short availability note */
+    .contact-body {
+      font-size: 0.9rem;
+      line-height: 1.65;
+      color: #999;
+      max-width: 320px;
+    }
+
+    /* Email CTA — same outlined button style as the hero CTA */
+    .contact-email {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.7rem;
+      font-size: 0.7rem;
+      font-weight: 500;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--white);
+      text-decoration: none;
+      border: 1px solid var(--white);
+      padding: 0.8rem 1.6rem;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .contact-email:hover { background: var(--white); color: var(--black); }
+
+
+    /* ============================================================
+       FOOTER
+       ============================================================
+       Minimal three-part footer: name left, socials center, year right.
+       Text is very faint to not compete with the contact band above.
+    ============================================================ */
+    footer {
+      border-top: 1px solid var(--rule);
+      padding: 1.5rem 3rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* Your name in faded Bebas Neue — a subtle repeat of the brand */
+    .footer-name {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 0.95rem;
+      letter-spacing: 0.18em;
+      color: rgba(244,240,232,0.25); /* Very transparent */
+    }
+
+    .footer-socials { display: flex; gap: 1.5rem; }
+
+    /* Social media links — very dark, brighten on hover */
+    .footer-socials a {
+      font-size: 0.62rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: #444;
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+
+    .footer-socials a:hover { color: var(--white); }
+
+    /* Copyright year */
+    .footer-copy { font-size: 0.62rem; letter-spacing: 0.1em; color: #3a3a3a; }
+
+
+    /* ============================================================
+       SCROLL REVEAL ANIMATION
+       ============================================================
+       Any element with the class "reveal" starts invisible and
+       slightly shifted down. When JavaScript detects it entering
+       the viewport, it adds the "visible" class, which triggers
+       the CSS transition to fade it in and slide it up.
+    ============================================================ */
+    .reveal {
+      opacity: 0;
+      transform: translateY(18px);
+      transition: opacity 0.65s ease, transform 0.65s ease;
+    }
+
+    /* Final state — element is fully visible and in its normal position */
+    .reveal.visible {
+      opacity: 1;
+      transform: none;
+    }
+
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       NAVIGATION BAR
+       ============================================================
+       Fixed header that stays at the top as you scroll.
+       The .active class is toggled by JavaScript based on scroll position.
+       TO CUSTOMIZE: Replace "Alexander Prue" with your name.
+                     Update the href anchors if you rename sections.
+  ============================================================ -->
+  <nav>
+    <!-- Clicking the logo scrolls back to the top of the page -->
+    <a href="#" class="nav-logo">Alexander Prue</a>
+
+    <ul class="nav-links">
+      <li><a href="#work"    class="active">Work</a></li>
+      <li><a href="#about"           >About</a></li>
+      <li><a href="#resume"          >Résumé</a></li>
+      <li><a href="#contact"         >Contact</a></li>
+    </ul>
+  </nav>
+
+
+  <!-- ============================================================
+       TICKER
+       ============================================================
+       The scrolling red strip just below the nav.
+       The text is repeated twice inside .ticker-inner so the
+       animation loops seamlessly (see the CSS comment above).
+       TO CUSTOMIZE: Replace the keywords with your own roles/skills.
+  ============================================================ -->
+  <div class="ticker">
+    <span class="ticker-inner">
+      Journalist &nbsp;·&nbsp; Filmmaker &nbsp;·&nbsp; Editor &nbsp;·&nbsp; Storyteller &nbsp;·&nbsp; Video Producer &nbsp;·&nbsp;
+      Journalist &nbsp;·&nbsp; Filmmaker &nbsp;·&nbsp; Editor &nbsp;·&nbsp; Storyteller &nbsp;·&nbsp; Video Producer &nbsp;·&nbsp;
+    </span>
+  </div>
+
+
+  <!-- ============================================================
+       HERO SECTION
+       ============================================================
+       Two-column layout:
+         Left  — your name, tagline, and "View My Work" button
+         Right — your latest featured piece + quick stats
+
+       TO CUSTOMIZE:
+         - Update the name, tagline (.hero-desc), and CTA text
+         - Change .featured-headline and .featured-meta to your latest piece
+         - Update the three .stat-num values with your real numbers
+  ============================================================ -->
+  <section class="hero" id="home">
+
+    <!-- LEFT: Identity and CTA -->
+    <div class="hero-left">
+      <!-- Small label above the name — like a magazine issue line -->
+      <div class="hero-issue">Portfolio &nbsp;·&nbsp; 2025</div>
+
+      <!-- Your name — the <em> makes the last name italic and faded -->
+      <h1 class="hero-name">
+        Alexander<br>
+        <em>Prue</em>
+      </h1>
+
+      <!-- Decorative red rule between name and tagline -->
+      <div class="hero-rule"></div>
+
+      <!-- One or two sentence description of who you are -->
+      <p class="hero-desc">
+        Writer and Video Producer working in comedy and drama. Based in New York.
+      </p>
+
+      <!-- Anchor link to the Work section further down the page -->
+      <a href="#work" class="hero-cta">
+        View My Work <span class="arrow">→</span>
+      </a>
+    </div>
+
+    <!-- RIGHT: Featured piece callout + stats -->
+    <div class="hero-right">
+      <!-- Label above the featured headline -->
+      <div class="featured-label">Latest Feature</div>
+
+      <!-- Title of your most recent or most prominent piece -->
+      <div class="featured-headline">
+        The Last Water Wars:<br>
+        A Report from the Colorado Basin
+      </div>
+
+      <!-- Where it was published and when -->
+      <div class="featured-meta">The Atlantic &nbsp;·&nbsp; January 2025</div>
+
+      <!-- Row of three quick stats.
+           TO CUSTOMIZE: Change the numbers and labels to match your output. -->
+      <div class="hero-stats">
+        <div class="stat-item">
+          <div class="stat-num">47</div>
+          <div class="stat-label">Stories</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-num">12</div>
+          <div class="stat-label">Videos</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-num">8</div>
+          <div class="stat-label">Publications</div>
+        </div>
+      </div>
+    </div>
+
+  </section><!-- end .hero -->
+
+
+  <!-- ============================================================
+       WORK SECTION
+       ============================================================
+       Filterable 2×2 grid of portfolio pieces.
+
+       HOW THE FILTER WORKS:
+         - Each card has data-type="writing" or data-type="video"
+         - The filter buttons have data-filter="all/writing/video"
+         - JavaScript adds/removes the .hidden class on cards
+           to show only the matching type
+
+       TO ADD A NEW CARD:
+         - Copy one of the <a class="work-card"> blocks
+         - Set data-type="writing" or data-type="video"
+         - Set href to the URL of the real piece
+         - Update the type label, thumb class, headline, excerpt, pub, and date
+         - Add a new .thumb-N gradient in the CSS if needed
+  ============================================================ -->
+  <section id="work">
+
+    <!-- Filter tabs — "All Work", "Writing", "Video" -->
+    <div class="filter-bar reveal">
+      <!-- data-filter tells JavaScript which cards to show -->
+      <button class="filter-btn active" data-filter="all">All Work</button>
+      <button class="filter-btn"        data-filter="writing">Writing</button>
+      <button class="filter-btn"        data-filter="video">Video</button>
+    </div>
+
+    <!-- The grid of cards -->
+    <div class="work-grid">
+
+      <!-- CARD 1: Writing sample -->
+      <!-- href="#" is a placeholder — replace with the real article URL -->
+      <a class="work-card reveal" data-type="writing" href="#">
+        <!-- Type label — update to match your piece (Feature, Essay, Review, etc.) -->
+        <div class="card-type">Feature · Writing</div>
+
+        <!-- Thumbnail placeholder — swap with <img src="..."> for real images -->
+        <div class="card-thumb thumb-1">
+          <div class="card-thumb-inner">
+            <span class="thumb-text">THE ATLANTIC</span>
+          </div>
+        </div>
+
+        <div class="card-headline">The Last Water Wars: A Report from the Colorado Basin</div>
+        <p class="card-excerpt">Seven states, one river, and a reckoning decades in the making. How America's water crisis became a political battleground.</p>
+
+        <div class="card-meta">
+          <span class="card-pub">The Atlantic</span>
+          <span class="card-date">Jan 2025</span>
+        </div>
+      </a><!-- end card 1 -->
+
+      <!-- CARD 2: Video sample -->
+      <a class="work-card reveal" data-type="video" href="#">
+        <!-- Adding .video to card-type changes the label color to blue -->
+        <div class="card-type video">Documentary · Video</div>
+
+        <!-- Video cards show a play button icon instead of a text watermark -->
+        <div class="card-thumb thumb-2">
+          <div class="card-thumb-inner">
+            <div class="play-icon"></div><!-- Play triangle drawn in CSS -->
+          </div>
+        </div>
+
+        <div class="card-headline">Voices From the Flood: Stories of a Louisiana Parish</div>
+        <p class="card-excerpt">A 22-minute documentary following three families navigating the aftermath of record flooding in Lafourche Parish.</p>
+
+        <div class="card-meta">
+          <span class="card-pub">PBS Frontline</span>
+          <span class="card-date">Nov 2024</span>
+        </div>
+      </a><!-- end card 2 -->
+
+      <!-- CARD 3: Writing sample -->
+      <a class="work-card reveal" data-type="writing" href="#">
+        <div class="card-type">Investigation · Writing</div>
+        <div class="card-thumb thumb-3">
+          <div class="card-thumb-inner">
+            <span class="thumb-text">PROPUBLICA</span>
+          </div>
+        </div>
+        <div class="card-headline">Inside the Revolving Door: How Fossil Fuel Lobbyists Write Energy Law</div>
+        <p class="card-excerpt">A year-long investigation into the network of former industry executives now shaping federal climate legislation.</p>
+        <div class="card-meta">
+          <span class="card-pub">ProPublica</span>
+          <span class="card-date">Sep 2024</span>
+        </div>
+      </a><!-- end card 3 -->
+
+      <!-- CARD 4: Video sample -->
+      <a class="work-card reveal" data-type="video" href="#">
+        <div class="card-type video">Report · Video</div>
+        <div class="card-thumb thumb-4">
+          <div class="card-thumb-inner">
+            <div class="play-icon"></div>
+          </div>
+        </div>
+        <div class="card-headline">Election Night, Six Ways: How America Watched Democracy</div>
+        <p class="card-excerpt">Six simultaneous streams from six swing-state cities — a portrait of a nation at a crossroads.</p>
+        <div class="card-meta">
+          <span class="card-pub">VICE News</span>
+          <span class="card-date">Nov 2024</span>
+        </div>
+      </a><!-- end card 4 -->
+
+    </div><!-- end .work-grid -->
+  </section><!-- end #work -->
+
+
+  <!-- ============================================================
+       INFO BAND — About + Résumé side by side
+       ============================================================
+       Uses a CSS grid to place About (left) and Résumé (right)
+       in one visual band, avoiding two separate tall sections.
+
+       TO CUSTOMIZE:
+         - Rewrite the About paragraphs with your own bio
+         - Replace the Résumé job entries with your real experience
+         - Update the Education section with your degrees
+         - Link the "Download PDF" button to an actual hosted PDF
+  ============================================================ -->
+  <div class="info-band">
+
+    <!-- LEFT: About -->
+    <div class="about-block reveal" id="about">
+      <div class="block-label">About</div>
+
+      <!-- Short punchy headline — can be a quote, a sentence, or a tagline -->
+      <h2 class="about-headline">Telling stories that systems try to bury.</h2>
+
+      <!-- Bio paragraph 1: who you are and where you've been published -->
+      <p class="about-body">
+        Alexander Prue is a writer and video producer based in New York City.
+        His work encompasses areas such as <strong>comedy, Fantasy, Science Fiction, Literary Fiction</strong>
+      </p>
+
+      <!-- Bio paragraph 2: credentials and awards -->
+      <p class="about-body">
+        He holds an B.A. in Media Arts and Science from Brooklyn College.
+      </p>
+
+      <!-- Internal anchor link to the Contact section -->
+      <a href="#contact" class="text-link">Get in Touch</a>
+    </div><!-- end .about-block -->
+
+    <!-- RIGHT: Résumé -->
+    <div class="resume-block reveal" id="resume">
+      <div class="block-label">Résumé</div>
+
+      <!-- Stack of job entries -->
+      <div class="resume-items">
+
+        <!-- JOB 1 — most recent first -->
+        <div class="resume-item">
+          <div class="resume-item-header">
+            <div class="resume-role">Staff Writer</div>
+            <div class="resume-years">2022 – Present</div>
+          </div>
+          <div class="resume-org">The Atlantic</div>
+          <div class="resume-desc">Longform features and investigations. Four cover stories. National Magazine Award shortlist, 2024.</div>
+        </div>
+
+        <!-- JOB 2 -->
+        <div class="resume-item">
+          <div class="resume-item-header">
+            <div class="resume-role">Contributing Reporter</div>
+            <div class="resume-years">2020 – 2022</div>
+          </div>
+          <div class="resume-org">ProPublica</div>
+          <div class="resume-desc">Co-bylined investigations into federal energy regulation and environmental justice.</div>
+        </div>
+
+        <!-- JOB 3 -->
+        <div class="resume-item">
+          <div class="resume-item-header">
+            <div class="resume-role">Video Producer & Reporter</div>
+            <div class="resume-years">2018 – 2020</div>
+          </div>
+          <div class="resume-org">VICE News</div>
+          <div class="resume-desc">Field documentary segments for broadcast and digital across 14 countries.</div>
+        </div>
+
+      </div><!-- end .resume-items -->
+
+      <!-- Thin divider between Experience and Education -->
+      <div class="resume-divider"></div>
+
+      <!-- Education — compact two-line text block -->
+      <div class="resume-edu">
+        M.S. Journalism — Columbia University, 2018<br>
+        B.A. Political Science — University of Michigan, 2016
+      </div>
+
+      <!-- Link this to a real PDF hosted somewhere (e.g. Google Drive, Dropbox) -->
+      <a href="#" class="resume-download">Download PDF ↓</a>
+
+    </div><!-- end .resume-block -->
+
+  </div><!-- end .info-band -->
+
+
+  <!-- ============================================================
+       CONTACT BAND
+       ============================================================
+       A horizontal strip with a large headline on the left and
+       a short note + email button on the right.
+       No contact form — keeps the page lean and directs people
+       straight to your email.
+
+       TO CUSTOMIZE:
+         - Update .contact-body with your availability details
+         - Replace the href="mailto:..." with your real email address
+  ============================================================ -->
+  <div class="contact-band reveal" id="contact">
+
+    <!-- Large serif headline — the <em> fades "work" for visual rhythm -->
+    <h2 class="contact-headline">Let's <em>work</em><br>together.</h2>
+
+    <div class="contact-right">
+      <!-- Short availability statement -->
+      <p class="contact-body">
+        Available for treatments, editing, and collaborations.
+        Response within 48 hours.
+      </p>
+
+      <!-- Direct mailto link — clicking opens the user's email app -->
+      <a href="mailto:alexanderwayneprue@gmail.com" class="contact-email">
+        Alexanderwayneprue@gmail.com →
+      </a>
+    </div>
+
+  </div><!-- end .contact-band -->
+
+
+  <!-- ============================================================
+       FOOTER
+       ============================================================
+       Minimal three-part row: name · social links · copyright year.
+       TO CUSTOMIZE: Replace social link hrefs with your real profile URLs.
+  ============================================================ -->
+  <footer>
+    <div class="footer-name">Alexander Prue</div>
+
+    <div class="footer-socials">
+      <!-- Replace # with your actual profile URLs -->
+      <a href="#">Blue Sky</a>
+      <a href="#">LinkedIn</a>
+      <a href="#">Instagram</a>
+    </div>
+
+    <div class="footer-copy">© 2025</div>
+  </footer>
+
+
+  <!-- ============================================================
+       JAVASCRIPT
+       ============================================================
+       Three separate behaviors handled here:
+
+       1. SCROLL REVEAL
+          Elements with class="reveal" start invisible.
+          An IntersectionObserver watches for them entering the viewport.
+          When they do, "visible" is added, triggering the CSS transition.
+
+       2. WORK FILTER
+          Clicking a filter button updates which cards are shown.
+          Cards with a non-matching data-type get the "hidden" class,
+          which sets display:none via CSS.
+
+       3. ACTIVE NAV LINK
+          On scroll, the script checks which section is currently
+          in view and adds .active to the matching nav link.
+  ============================================================ -->
+  <script>
+
+    /* ----------------------------------------------------------
+       1. SCROLL REVEAL
+       ----------------------------------------------------------
+       IntersectionObserver fires a callback whenever a watched
+       element enters or exits the viewport.
+       threshold: 0.06 means "trigger when 6% of the element is visible."
+       The staggered setTimeout adds a slight cascade effect when
+       multiple elements enter the viewport at the same time.
+    ---------------------------------------------------------- */
+    const reveals = document.querySelectorAll('.reveal');
+
+    const revealObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry, i) => {
+        if (entry.isIntersecting) {
+          // Small delay per element (i * 70ms) creates a stagger effect
+          setTimeout(() => entry.target.classList.add('visible'), i * 70);
+          // Stop watching this element once it's been revealed
+          revealObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.06 });
+
+    // Start watching every element with the .reveal class
+    reveals.forEach(el => revealObserver.observe(el));
+
+
+    /* ----------------------------------------------------------
+       2. WORK FILTER
+       ----------------------------------------------------------
+       When a filter button is clicked:
+         a) Remove .active from all buttons, add it to the clicked one
+         b) For each card, check if its data-type matches the filter
+            - If it matches (or filter is "all"), remove .hidden
+            - If it doesn't match, add .hidden (which sets display:none)
+    ---------------------------------------------------------- */
+    const filterBtns = document.querySelectorAll('.filter-btn');
+    const cards = document.querySelectorAll('.work-card');
+
+    filterBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+
+        // Update which button looks active
+        filterBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        // Read the filter value from the button's data-filter attribute
+        const filter = btn.dataset.filter;
+
+        // Show or hide each card based on its data-type
+        cards.forEach(card => {
+          // classList.toggle(class, condition) adds the class if condition is true,
+          // removes it if false — cleaner than an if/else
+          card.classList.toggle(
+            'hidden',
+            filter !== 'all' && card.dataset.type !== filter
+          );
+        });
+
+      });
+    });
+
+
+    /* ----------------------------------------------------------
+       3. ACTIVE NAV LINK ON SCROLL
+       ----------------------------------------------------------
+       On every scroll event, loop through all elements with an id.
+       If the page has scrolled past the element's top (minus 120px
+       offset to trigger slightly before reaching it), mark it as current.
+       Then update the nav link whose href matches #current.
+    ---------------------------------------------------------- */
+    const navLinks = document.querySelectorAll('.nav-links a');
+
+    window.addEventListener('scroll', () => {
+      let current = '';
+
+      // Check every element that has an id attribute
+      document.querySelectorAll('[id]').forEach(sec => {
+        // 120px offset accounts for the fixed nav height + some breathing room
+        if (window.scrollY >= sec.offsetTop - 120) {
+          current = sec.id;
+        }
+      });
+
+      // Toggle .active on the nav link that matches the current section
+      navLinks.forEach(a => {
+        a.classList.toggle('active', a.getAttribute('href') === '#' + current);
+      });
+    });
+
+  </script>
+
+</body>
+</html>
